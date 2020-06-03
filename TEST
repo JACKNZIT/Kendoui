@@ -1,0 +1,200 @@
+@model  KendoUI.Northwind.Dashboard.Models.UserModel
+@*@{
+        ViewBag.Title = "Index";
+        Layout = "~/Views/Shared/_MasterPage.cshtml";
+    }*@*
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.userid)
+    <h2></h2>
+    <div class="container">
+        <div class="row">
+
+            <div class="form-group col col-md-4">
+                <label for="email">Email</label>
+                @Html.TextBoxFor(m => m.email, null, new { @class = "form-control" })
+                <span style="color:red;">@Html.ValidationMessageFor(m => m.email)</span>
+            </div>
+            <div class="form-group col-md-4">
+                <label for="mobile">Mobile</label>
+                @Html.TextBoxFor(m => m.mobile, null, new { @class = "form-control" })
+
+                <span style="color:red;">  @Html.ValidationMessageFor(m => m.mobile)</span>
+            </div>
+            <div class="form-group col-md-4">
+                <label for="password">Password</label>
+                @Html.PasswordFor(m => m.password, new { @class = "form-control" })
+                <span style="color:red;">@Html.ValidationMessageFor(m => m.password)</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class=" col col-md-4 form-group">
+                <label for="confirmpassword">Confirm Password</label>
+                @Html.PasswordFor(m => m.confirmpassword, new { @class = "form-control" })
+                <span style="color:red;">@Html.ValidationMessageFor(m => m.confirmpassword)</span>
+            </div>
+            <div class="col col-md-4 form-group">
+                <label for="dob">Date Of Birth</label>
+                <br>
+                @*<input id="dob" name="dob" />*@
+                @(Html.Kendo().DatePicker()
+                        .Name("dob")
+                       .Value("10/10/2011")
+                          .HtmlAttributes(new { style = "width: 100%", title = "datepicker" })
+                        )
+
+                <span style="color:red;">@Html.ValidationMessageFor(m => m.dob)</span>
+            </div>
+            <div class="col col-md-4 form-group">
+                <label for="category2">Categories</label>
+
+                @(Html.Kendo().MultiSelect()
+                  .Name("category2")
+                  .DataTextField("CategoryName")
+                  .DataValueField("CategoryID")
+                  //.Value(new[] { 2, 7 })
+                  .DataSource(source =>
+                  {
+                      source.Read(read =>
+                      {
+                          read.Action("Categories_Read", "Home");
+                      })
+                    .ServerFiltering(true);
+                  })
+                 )
+                @*<span style="color:red;">@Html.ValidationMessageFor(m => m.Categories)</span>*@
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col col-md-4 form-group">
+                <label for="category2">Categories</label>
+            @(Html.Kendo().AutoComplete()
+          .Name("categoryName")
+          .DataTextField("CategoryName")
+          .Filter("contains")
+          .HtmlAttributes(new { style = "width:100%;" })
+          .Height(400)
+          .DataSource(source =>
+          {
+
+              source.Read(read =>
+              {
+                  read.Action("Categories_Read", "Home");
+
+
+              });
+          })
+             .FooterTemplate("Total <strong>#: instance.dataSource.total() #</strong> items found")
+            .Events(e =>
+            {
+                e.Select("onSelect").Change("onChange2");
+            })
+          )
+            </div>
+
+            <div class="col col-md-4 form-group">
+                <label for="category2">Categories</label>
+
+                @(Html.Kendo().MultiColumnComboBox()
+          .Name("category3")
+          .DataTextField("CategoryName")
+          .DataValueField("CategoryID")
+          .Filter("contains")
+          .FilterFields(new string[] { "CategoryID", "CategoryName" })
+          .Columns(columns =>
+          {
+              columns.Add().Field("CategoryID").Title("CategoryID").Width("200px");
+              columns.Add().Field("CategoryName").Title("CategoryName").Width("200px");
+          })
+          .FooterTemplate("Total #: instance.dataSource.total() # items found")
+          .HtmlAttributes(new { style = "width:100%;" })
+          .Height(400)
+          .DataSource(source => source
+
+             .Custom()
+              .Transport(transport => transport
+             .Read(read =>
+             {
+                 read.Action("Categories_Read", "Home")
+                .Data("onAdditionalData");
+
+             }))
+              )
+          )
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <input type="submit" value="Submit" class="btn btn-primary" name="btninsert" />
+                <button onclick="onFormSubmit()">Click me</button>
+                <a href="#" class="submitForm">Submit</a>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            $('body').on('click', '.edit', function () {
+                debugger;
+                $("#userid").val($(this).data("id"));
+                $("#email").val($(this).data("email"));
+                $("#mobile").val($(this).data("mobile"));
+                $("#password").val($(this).data("password"));
+                var d = $(this).data("date").slice(0, 10).split('-');
+                var ddate = d[0] + '/' + d[1] + '/' + d[2];
+                $("#dob").val(ddate);
+            });
+
+        });
+        function onFormSubmit(e) {
+            //           $("#validation-success").html("<div class='k-messagebox k-messagebox-success'>Form data is valid! </div>");
+            //var grid = $("#employeeForm").data("kendoForm");
+            var model = @Html.Raw(Json.Encode(Model));
+            var s = $("#Categories").val($(this).data("Categories"));
+            console.log(s);
+        };
+
+        $(document).ready(function (e) {
+            $("a.submitForm").click(function (e) {
+                var model = e.model;
+                console.log($("form").model);
+
+                $("form").submit();
+            });
+        });
+        //$("#dob").kendoDatePicker({
+            //    format: "dd/MM/yyyy"
+            //});
+
+        function onAdditionalData() {
+            return {
+                text: $("#category3").val()
+            };
+        }
+
+
+            function onSelect(e) {
+                
+                    var dataItem = this.dataItem(e.item.index());
+                   console.log("event ::  select (" + dataItem.CategoryName + ")+ (" + dataItem.CategoryID + ")");
+                    console.log( dataItem.CategoryID );
+                $('#category2').data('kendoMultiSelect').value(dataItem.CategoryID);
+                $('#category3').data('kendoMultiColumnComboBox').value(dataItem.CategoryID); 
+
+                 }
+        function onChange2() {
+            var s = $('#categoryName').val();
+            console.log(s);
+            if (s == null || s.length <= 0) {
+              
+                $('#category3').data('kendoMultiColumnComboBox').value("");
+            }
+        }
+       
+    </script>
+
+}
