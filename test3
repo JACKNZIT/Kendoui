@@ -1,0 +1,244 @@
+[HttpPost]
+        public ActionResult Employee(EmployeeViewModel dto)
+        {
+            ViewData["Message"] = "Success";
+            ModelState.Clear();
+            dto = new EmployeeViewModel();
+            return PartialView("EmployeeEditView",dto);
+           // return Json(new { isok = true, message = "Your Message" });
+        }
+
+
+@model  KendoUI.Northwind.Dashboard.Models.EmployeeViewModel
+@*@{
+        ViewBag.Title = "Index";
+        Layout = "~/Views/Shared/_MasterPage.cshtml";
+    }*@*
+<div id="notID">
+    123
+</div>
+
+
+@using (Ajax.BeginForm("Employee", "Home", new AjaxOptions { HttpMethod = "POST", OnSuccess = "Showmessage" }, new { id = "employeeform" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.EmployeeID)
+    <h2></h2>
+    <div class="container">
+        <div class="row">
+
+            <div class="form-group col col-md-4">
+                <label for="First Name">First Name</label>
+                @Html.TextBoxFor(m => m.FirstName, null, new { @class = "form-control" })
+                <span style="color:red;">@Html.ValidationMessageFor(m => m.FirstName)</span>
+            </div>
+            <div class="form-group col-md-4">
+                <label for="Last Name">Last Name</label>
+                @Html.TextBoxFor(m => m.LastName, null, new { @class = "form-control" })
+
+                <span style="color:red;">  @Html.ValidationMessageFor(m => m.LastName)</span>
+            </div>
+            <div class="form-group col-md-4">
+                <label for="City">City</label>
+                @Html.TextBoxFor(m => m.City, new { @class = "form-control" })
+                <span style="color:red;">@Html.ValidationMessageFor(m => m.City)</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class=" col col-md-4 form-group">
+                <label for="Address">Address</label>
+                @Html.TextBoxFor(m => m.Address, new { @class = "form-control" })
+                <span style="color:red;">@Html.ValidationMessageFor(m => m.Address)</span>
+            </div>
+            <div class="col col-md-4 form-group">
+                <label for="dob">Date Of Birth</label>
+                <br>
+                @(Html.Kendo().DatePicker()
+                        .Name("BirthDate")
+                         .HtmlAttributes(new { style = "width: 100%", title = "datepicker" })
+                   )
+
+                <span style="color:red;">@Html.ValidationMessageFor(m => m.BirthDate)</span>
+            </div>
+            <div class=" col col-md-4 form-group">
+                <label for="country">Country</label>
+                @Html.TextBoxFor(m => m.Country, new { @class = "form-control" })
+                <span style="color:red;">@Html.ValidationMessageFor(m => m.Country)</span>
+            </div>
+
+
+            @*<div class="col col-md-4 form-group">
+                    <label for="Country">Country</label>
+                    @(Html.Kendo().MultiSelect()
+                      .Name("category2")
+                      .DataTextField("CategoryName")
+                      .DataValueField("CategoryID")
+                      .DataSource(source =>
+                      {
+                          source.Read(read =>
+                          {
+                              read.Action("Categories_Read", "Home");
+                          })
+                        .ServerFiltering(true);
+                      })
+                     )
+                   <span style="color:red;">@Html.ValidationMessageFor(m => m.Categories)</span>
+                </div>*@
+        </div>
+
+        @*<div class="row">
+                <div class="col col-md-4 form-group">
+                    <label for="category2">Categories</label>
+                @(Html.Kendo().AutoComplete()
+              .Name("categoryName")
+              .DataTextField("CategoryName")
+              .Filter("contains")
+              .HtmlAttributes(new { style = "width:100%;" })
+              .Height(400)
+              .DataSource(source =>
+              {
+
+                  source.Read(read =>
+                  {
+                      read.Action("Categories_Read", "Home");
+
+
+                  });
+              })
+                 .FooterTemplate("Total <strong>#: instance.dataSource.total() #</strong> items found")
+                .Events(e =>
+                {
+                    e.Select("onSelect").Change("onChange2");
+                })
+              )
+                </div>
+
+                <div class="col col-md-4 form-group">
+                    <label for="category2">Categories</label>
+
+                    @(Html.Kendo().MultiColumnComboBox()
+              .Name("category3")
+              .DataTextField("CategoryName")
+              .DataValueField("CategoryID")
+              .Filter("contains")
+              .FilterFields(new string[] { "CategoryID", "CategoryName" })
+              .Columns(columns =>
+              {
+                  columns.Add().Field("CategoryID").Title("CategoryID").Width("200px");
+                  columns.Add().Field("CategoryName").Title("CategoryName").Width("200px");
+              })
+              .FooterTemplate("Total #: instance.dataSource.total() # items found")
+              .HtmlAttributes(new { style = "width:100%;" })
+              .Height(400)
+              .DataSource(source => source
+
+                 .Custom()
+                  .Transport(transport => transport
+                 .Read(read =>
+                 {
+                     read.Action("Categories_Read", "Home")
+                    .Data("onAdditionalData");
+
+                 }))
+                  )
+              )
+                </div>
+            </div>*@
+        <div class="row">
+            <div class="form-group">
+                <input type="submit" value="Submit" class="btn btn-primary" onclick="onFormSubmit2()" />
+                <button type="reset" value="Reset" class="btn-cancel" onclick="resetMulti();">Reset</button>
+                @*<button onclick="onFormSubmit()">Click me</button>*@
+                @*<a href="#" class="submitForm">Submit</a>*@
+            </div>
+        </div>
+    </div>
+
+    <script id="successTemplate" type="text/x-kendo-template">
+        <div class="upload-success">
+            <img src="../content/web/notification/success-icon.png" />
+            <h3>#= message #</h3>
+        </div>
+    </script>
+
+    <script type="text/javascript">
+
+        function Showmessage(data) {
+            notification.show({
+                message: "Upload Successful"
+            }, "success");
+            $('#notID').html('Successfully Submitted');
+            $('#employeeform')[0].reset();
+
+        }
+        function resetMulti() {
+            $('#employeeform')[0].reset();
+        }
+
+        $(document).ready(function () {
+
+            $('body').on('click', '.edit', function () {
+                debugger;
+                $("#userid").val($(this).data("id"));
+                $("#email").val($(this).data("email"));
+                $("#mobile").val($(this).data("mobile"));
+                $("#password").val($(this).data("password"));
+                var d = $(this).data("date").slice(0, 10).split('-');
+                var ddate = d[0] + '/' + d[1] + '/' + d[2];
+                $("#dob").val(ddate);
+            });
+
+        });
+        function onFormSubmit(e) {
+            //           $("#validation-success").html("<div class='k-messagebox k-messagebox-success'>Form data is valid! </div>");
+            //var grid = $("#employeeForm").data("kendoForm");
+            var model = @Html.Raw(Json.Encode(Model));
+            var s = $("#Categories").val($(this).data("Categories"));
+            console.log(s);
+        };
+
+        function onFormSubmit2(e) {
+            var $form = $(e).parents('form');
+
+            console.log("ik");
+        };
+        //$(document).ready(function (e) {
+        //    $("a.submitForm").click(function (e) {
+        //        var model = e.model;
+        //        console.log($("form").model);
+
+        //        $("form").submit();
+        //    });
+        //});
+        //$("#dob").kendoDatePicker({
+            //    format: "dd/MM/yyyy"
+            //});
+
+        function onAdditionalData() {
+            return {
+                text: $("#category3").val()
+            };
+        }
+
+
+            function onSelect(e) {
+
+                    var dataItem = this.dataItem(e.item.index());
+                   console.log("event ::  select (" + dataItem.CategoryName + ")+ (" + dataItem.CategoryID + ")");
+                    console.log( dataItem.CategoryID );
+                $('#category2').data('kendoMultiSelect').value(dataItem.CategoryID);
+                $('#category3').data('kendoMultiColumnComboBox').value(dataItem.CategoryID);
+
+                 }
+        function onChange2() {
+            var s = $('#categoryName').val();
+            console.log(s);
+            if (s == null || s.length <= 0) {
+
+                $('#category3').data('kendoMultiColumnComboBox').value("");
+            }
+        }
+
+    </script>
+
+}
