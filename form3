@@ -1,0 +1,31 @@
+Try to do a partial submit using jQuery:
+
+<script type="text/javascript">
+$(document).ready(function () {
+    $("input[type=submit]").live("click", function () {
+        var f = $("input[type=submit]").parents("form");
+        var action = f.attr("action");
+        var serializedForm = f.serialize();
+        $.ajax({
+            type: 'POST',
+            url: action,
+            data: serializedForm,
+            success: function (data, textStatus, request) {
+                if (!data == "") {
+                    // redisplay partial view
+                    $("#formDiv").html(data);
+                }
+                else {
+                    // do whatever on sucess
+                }
+            }
+        });
+        return false;
+    });
+});
+</script>
+Assuming your view/ascx/HTML is something like this:
+
+<div id="formDiv">
+    <% Html.RenderAction("Request"); %>
+</div>
