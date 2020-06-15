@@ -18,3 +18,26 @@
             //                              select s.Value).First()
             //              };
             //var s = results.ToArray();
+ var groups = (from p in _context.RecordsMaster
+                          select p).ToList();
+
+            var sGroups = groups.GroupBy(x => new { x.Siteid, x.Gender })
+                        .Select(g => new
+                        {
+                            SiteId = g.Key.Siteid,
+                            Gender = g.Key.Gender,
+                            Count = g.Count()
+                        });
+
+
+           // var siteGroups = await sGroups.ToDictionaryAsync(x => x.key, x => x.count);
+            var results = from p in sites
+                          select new SiteSummary
+                          {
+                              SiteId = p.SiteId,
+                              SiteName = p.SiteName,
+                              Quantity = (from s in sGroups
+                                          where s.SiteId == p.SiteId && s.Gender=="F"
+                                          select s.Count).First()
+                          };
+            var s = results.ToArray();
