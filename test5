@@ -1,0 +1,20 @@
+//var groups = from p in _context.RecordsMaster
+            //             group p by p.Siteid into eGroup
+            //             select new
+            //             {
+            //                 key = eGroup.Key,
+            //                 count = eGroup.Count()
+            //             };
+
+
+            //var siteGroups = await groups.ToDictionaryAsync(x => x.key, x => x.count);
+            //var results = from p in sites
+            //              select new SiteSummary
+            //              {
+            //                  SiteId = p.SiteId,
+            //                  SiteName = p.SiteName,
+            //                  Quantity = (from s in siteGroups
+            //                              where s.Key == p.SiteId
+            //                              select s.Value).First()
+            //              };
+            //var s = results.ToArray();
