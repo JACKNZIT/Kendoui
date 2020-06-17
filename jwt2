@@ -1,0 +1,175 @@
+http://www.binaryintellect.net/articles/db752e63-8e07-4760-b7f2-a882e67636ce.aspx
+
+JWT Authentication In ASP.NET Core Using HttpClient
+In my last two articles (you can read them here and here) we discussed how JWT authentication can be implemented in ASP.NET Core APIs and jQuery client. In this article we will use .NET Core's HttpClient component to perform JWT authentication.
+
+If you wish to call the Employee API from server side C# code (say an MVC controller) or a desktop application, you will typically use HttpClient component. The overall process of JWT authentication with HttpClient remains the same. You first grab a JWT token by calling the Security API and then include this token in the authorization header while calling the Employee API.
+
+To illustrate how this works, we will develop a simple application as shown below:
+
+
+
+The above page looks quite similar to the jQuery example we developed earlier. However, the big difference is that the three buttons Sign IN, Sign Out, and Show Data cause form submission. The HomeController handles these form submissions through three actions namely Login(), Logout(), and ShowData(). These actions use HttpClient component to call the Security API and the Employee API.
+
+Let's see these three actions one-by-one.
+
+Enable Session state
+In the jQuery client example we used sessionStore to store the JWT token received from the Security API. We need similar storage mechanism while working with HttpClient also. One possibility is to use ASP.NET Core Session state. You need to enable it in the ConfigureServices() and Configure() methods as shown below:
+
+public void ConfigureServices(IServiceCollection services)
+{
+  ...
+  services.AddMemoryCache();
+  services.AddSession();
+}
+And
+
+public void Configure(IApplicationBuilder app,
+IHostingEnvironment env)
+{
+  ...
+
+  app.UseSession();
+
+  ...
+}
+Once Session state is made available to your application, you can store and retrieve the JWT token in it.
+
+Index view
+Ok. Now let's see how the Index view housing the three buttons looks like:
+
+<form method="post">
+    <button type="submit" asp-action="Login"
+asp-controller="Home">Sign In</button>
+    <button type="submit" asp-action="Logout"
+asp-controller="Home">Sign Out</button>
+    <button type="submit" asp-action="ShowData"
+asp-controller="Home">Show Data</button>
+    <h2>@Html.Raw(@ViewBag.Message)</h2>
+</form>
+Notice that the form tag helper doesn't specify the controller and action name. That's because each of the buttons is submitting to a different action. Therefore, the button tag helper specifies the asp-action for each button. The Sign In button submits to the Login() action, the Sign Out button submits to the Logout() action, and the Show Data button submits to ShowData() action.
+
+The response from these actions is displayed on the page using Message ViewBag property.
+
+Login() action of HomeController
+The Login() action invokes the Security API's Login() action in an attempt to retrieve a JWT token. The token is then stored in the Session. The following code shows how this is done.
+
+public IActionResult Login()
+{
+    string baseUrl = "http://localhost:49387";
+    HttpClient client = new HttpClient();
+    client.BaseAddress = new Uri(baseUrl);
+    var contentType = new MediaTypeWithQualityHeaderValue
+("application/json");
+    client.DefaultRequestHeaders.Accept.Add(contentType);
+
+    User userModel = new User();
+    userModel.UserName = "User1";
+    userModel.Password = "pass$word";
+
+    string stringData = JsonConvert.SerializeObject(userModel);
+    var contentData = new StringContent(stringData,
+System.Text.Encoding.UTF8, "application/json");
+
+    HttpResponseMessage response = client.PostAsync
+("/api/security",contentData).Result;
+    string stringJWT = response.Content.
+ReadAsStringAsync().Result;
+    JWT jwt = JsonConvert.DeserializeObject
+<JWT>(stringJWT);
+
+    HttpContext.Session.SetString("token", jwt.Token);
+
+    ViewBag.Message = "User logged in successfully!";
+
+    return View("Index");
+}
+The above code creates an instance of HttpClient component and sets its BaseAddress and content type header. Make sure to change the base address as per your environment. The code then creates a User object and stores UserName and Password in it. This User object needs to be sent to the Security API for authentication purpose.
+
+In order to send User object to the Security API we convert it into StringContent object and then invoke PostAsync() method. The PostAsync() method of HttpClient makes a POST request to the Security API and carries User credentials along with it.
+
+Recollect that Login() action of Security API is returning Ok() along with JWT token. This response is read using ReadAsStringAsync() method and de-serialized into JWT object. The JWT class looks like this:
+
+public class JWT
+{
+    public string Token { get; set; }
+}
+Then the code stores the JWT token into Session using SetString() method. A success message is returned to the client.
+
+
+
+Logout() action of HomeController
+The Logout() action simply removes the JWT token stored in the Session.
+
+public IActionResult Logout()
+{
+    HttpContext.Session.Remove("token");
+    ViewBag.Message = "User logged out successfully!";
+    return View("Index");
+}
+A message is displayed to indicate successful logging out operation.
+
+
+
+ShowData() action of HomeController
+The ShowData() action is where we call the Employee API. While calling the Employee API we need to send the JWT token received earlier in the Authorization header. The following code shows how it is done.
+
+public IActionResult ShowData()
+{
+    string baseUrl = "http://localhost:49387";
+    HttpClient client = new HttpClient();
+    client.BaseAddress = new Uri(baseUrl);
+    var contentType = new MediaTypeWithQualityHeaderValue
+("application/json");
+    client.DefaultRequestHeaders.Accept.Add(contentType);
+
+    client.DefaultRequestHeaders.Authorization =
+new AuthenticationHeaderValue("Bearer",
+HttpContext.Session.GetString("token"));
+
+    HttpResponseMessage response = client.GetAsync
+("/api/employee").Result;
+    string stringData = response.Content.
+ReadAsStringAsync().Result;
+    List<Employee> data = JsonConvert.DeserializeObject
+<List<Employee>>(stringData);
+
+    if (response.StatusCode == HttpStatusCode.Unauthorized)
+    {
+        ViewBag.Message = "Unauthorized!";
+    }
+    else
+    {
+        string strTable = "<table border='1' cellpadding='10'>";
+        foreach (Employee emp in data)
+        {
+            strTable += "<tr>";
+            strTable += "<td>";
+            strTable += emp.EmployeeID;
+            strTable += "</td>";
+            strTable += "<td>";
+            strTable += emp.FirstName;
+            strTable += "</td>";
+            strTable += "<td>";
+            strTable += emp.LastName;
+            strTable += "</td>";
+            strTable += "</tr>";
+
+        }
+        strTable += "</table>";
+
+        ViewBag.Message = strTable;
+    }
+
+    return View("Index");
+}
+The above code creates HttpClient object as before. It then adds the Authorization header using DefaultRequestHeaders.Authorization property. The scheme parameter of AuthorizationHeaderValue is set to Bearer and the JWT token stored in the Session is passed as its second parameter.
+
+Then we call GetAsync() in an attempt to receive the employee data. If HttpResponseMessage returns a StatusCode of 401 (as indicated by HttpStatusCode.Unauthorized enum value) it indicates that the authentication has failed. And hence we display an error message. 
+
+
+
+If authentication has succeeded, we iterate through the employee List and form <table> markup with EmployeeID, FirstName, and LastName. This table is then displayed on the page as shown in the first figure of this article.
+
+That's it for now! Keep coding!!
+
