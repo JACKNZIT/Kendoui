@@ -1,0 +1,117 @@
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+
+namespace WebApplication1.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
+    {
+        [HttpPost("token")]
+        public ActionResult GetToken()
+        {
+            // return Ok("Hello from API");
+
+            //sercurity key
+
+           var securityKey = "This_is_our_super_long_security_key";
+
+
+            // symmectric sercurity key
+
+            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(securityKey));
+
+            // singing credentials
+            var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256Signature);
+
+            // add calims
+            var claims = new List<Claim>();
+            claims.Add(new Claim(ClaimTypes.Role, "Administrator"));
+            claims.Add(new Claim("OUr_Custom_claim", "Our_custom_value"));
+
+            //create token
+
+            var token = new JwtSecurityToken(
+                issuer: "smesk.in",
+                audience: "readers",
+                expires: DateTime.Now.AddHours(1),
+                signingCredentials: signingCredentials,
+                claims: claims
+                ) ;
+
+            //return token
+            return Ok(new JwtSecurityTokenHandler().WriteToken(token));
+
+        }
+    }
+}
+
+ public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+            var securityKey = "This_is_our_super_long_security_key";
+            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(securityKey));
+
+            // singing credentials
+            var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256Signature);
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(option =>
+                {
+                    option.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateIssuerSigningKey = true,
+                        //set up validate data
+                        ValidIssuer = "smesk.in",
+                        ValidAudience = "readers",
+                        IssuerSigningKey= symmetricSecurityKey
+
+
+                    };
+                });
+            services.AddControllers();
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+
+            app.UseHttpsRedirection();
+
+            app.UseRouting();
+            app.UseAuthentication();
+
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+        }
+    }
+}
+
+
