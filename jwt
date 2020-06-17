@@ -1,0 +1,162 @@
+In this tutorial we'll go through a simple example of how to implement 
+JWT (JSON Web Token) authentication in an ASP.NET Core 3.0 API with C#.
+
+
+1. Create a web api application using asp.net core :(JWTAuth)
+
+2. Create a Controller:
+LoginController:
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+using JWTAuth.Model;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+
+namespace JWTAuth.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class LoginController : ControllerBase
+    {
+        private IConfiguration _config;
+
+        public LoginController(IConfiguration config)
+        {
+            _config = config;
+        }
+
+        [HttpGet]
+        public IActionResult Login(string userId, string pass)
+        {
+            UserModel login = new UserModel();
+            login.Username = userId;
+            login.Pass = pass;
+            IActionResult response = Unauthorized();
+
+            var user = AuthenticateUser(login);
+            if (user != null)
+            {
+                var tokenString = GenerateJSONWebToken(user);
+                response = Ok(new { token = tokenString });
+            }
+
+            return response;
+        }
+        private UserModel AuthenticateUser(UserModel login)
+        {
+            UserModel user = null;
+            if (login.Username == "ashproghelp" && login.Pass == "123")
+            {
+                user = new UserModel { Username = "AshProgHelp", EmailAddress = "AshProgHelp@gmail.com", Pass = "123" };
+            }
+            return user;
+        }
+        private string GenerateJSONWebToken(UserModel userInfo)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[] {
+            new Claim(JwtRegisteredClaimNames.Sub, userInfo.Username),
+            new Claim(JwtRegisteredClaimNames.Email, userInfo.EmailAddress),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Issuer"],
+                claims,
+                expires: DateTime.Now.AddMinutes(120),
+                signingCredentials: credentials);
+            var encodetoken = new JwtSecurityTokenHandler().WriteToken(token);
+            return encodetoken;
+        }
+
+        [Authorize]
+        [HttpPost("Post")]
+        public string Post()
+        {
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            IList<Claim> claim = identity.Claims.ToList();
+            var userName = claim[0].Value; //claim.Where(c => c.Type == "Sub").Select(c => c.Value).SingleOrDefault();
+            return "Welcome To:" + userName;
+        }
+
+        [HttpGet ("GetValue")]
+        [Authorize]
+        public ActionResult<IEnumerable<string>> Get()
+        {
+            return new string[] { "value1", "value2", "value3", "value4", "value5" };
+        }
+    }
+}
+
+3. appsettings.json:
+
+ "Jwt": {
+    "Key": "AshProghelpSecretKey",
+    "Issuer": "ashproghelp.com"
+  }
+
+4. Startup.cs:
+      public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials().Build());
+            });
+            services.AddControllers();
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = Configuration["Jwt:Issuer"],
+                        ValidAudience = Configuration["Jwt:Issuer"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                    };
+                });
+
+                 services.AddMvc();
+        }
+
+--==================================================
+
+ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            app.UseHttpsRedirection();
+            app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+        }
+
+5. Create UserModel Calss:
+ public class UserModel
+    {
+        public string Username { get; set; }
+        public string Pass { get; set; }
+        public string EmailAddress { get; set; }
+        public DateTime DateOfJoin { get; set; }
+    }
