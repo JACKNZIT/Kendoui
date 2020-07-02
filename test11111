@@ -1,0 +1,11 @@
+1.Security Challenges
+  One of the benefits of cloud technology is the ability to access resources that would otherwise be unattainable. A cloud provider
+will have security experts deploying the latest patches and software to its data center.However, any applcations opereation through the cloud will store all their data in the cloud. This means there is no protected health information
+residing on hosptial side, which is more secure situation than today's current environment.  In this startgey , it's better to keep the clinican systme on local and move non-clcnical system
+to cloud.
+2.Workflow Challenges
+Any transition to a cloud would require significant support from the technology partners to ensure a smooth transition for users. For these inhouse applications, we can convert these applcaiton to
+micro services and deploy to containers instead of VMS. However, some vendor's applciaton may need vendort support to move and few applcation my hard to move due to old technologies(lack of moden authentication and authorization
+,web api)
+
+ 
