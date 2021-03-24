@@ -96,3 +96,201 @@
            <br />  
       </body>  
  </html>  
+ 
+ {
+  "person": [
+    {
+      "id": "1",
+      "name": "Person1"
+    },
+    {
+      "id": "2",
+      "name": "Person2"
+    },
+    {
+      "id": "3",
+      "name": "Person3"
+    }
+  ]
+}
+
+<!DOCTYPE html>  
+ <html>  
+      <head>  
+           <title> TestForm</title>  
+           <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>  
+           <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />  
+           <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>  
+      </head>  
+      <body>  
+           <br />  
+           <div class="container" style="width:500px;">  
+                <h3 align="">TestForm</h3><br />                 
+                <!-- <form method="post">  -->
+               <form id="main"  method="post" > 
+                     <?php   
+                     if(isset($error))  
+                     {  
+                          echo $error;  
+                     }  
+                     ?>  
+                     <br />  
+                     <label>Name</label>  
+                     <input type="text" name="name" class="form-control" /><br />  
+                     <label>Gender</label>  
+                     <input type="text" name="gender" class="form-control" /><br />  
+                     <label>Comments</label>  
+                     <input type="text" name="comments" class="form-control" /><br />  
+                                         
+                     <label>
+        <input type="radio" name="radio" value="1">Lock & Key
+        <span class="select"></span>
+    </label>
+    <label>
+        <input type="radio" name="radio" value="2">Umbrella Academy
+        <span class="select"></span>
+    </label>
+    <label>
+        <input type="radio" name="radio" value="3">Stranger Things
+        <span class="select"></span>
+    </label>
+    <label>
+        <input type="radio" name="radio" value="4">Ozark
+        <span class="select"></span>
+    </label>
+    <div class="input-group ">
+  <select  id="inputGroupSelect02">
+    <option selected>Choose...</option>
+    <option value="1">One</option>
+    <option value="2">Two</option>
+    <option value="3">Three</option>
+  </select>
+
+
+  
+</div>
+
+<select id="people" name="person"></select>
+
+    <input type="submit" name="submit" value="Append" class="btn btn-info" /><br /> 
+                     <?php  
+                     if(isset($message))  
+                     {  
+                          echo $message;  
+                     }  
+                     ?>  
+                </form>  
+           </div>  
+           <br />  
+      </body>  
+ </html>  
+<script>
+$(document).ready(function () {
+  // Listen to submit event on the <form> itself!
+  $('#main').submit(function (e) {
+
+    // Prevent form submission which refreshes page
+    e.preventDefault();
+
+    // Serialize data
+    var formData = $(this).serialize();
+    console.log(formData);
+    // Make AJAX request
+    $.post("formtoJson.php", formData).complete(function() {
+     $('#main')[0].reset();
+     alert("Success");
+     
+    });
+  });
+});
+
+//get a reference to the select element
+$select = $('#people');
+//request the JSON data and parse into the select element
+$.ajax({
+        url:   "person.json",
+        dataType: 'JSON',
+        success: function (data) {
+           $select.html('');
+           $.each(data.person, function(key, val){
+           $select.append('<option  value="' + val.id + '">' + val.name + '</option>');
+            })
+            },
+           error: function () {
+           $select.html('<option id="-1">none available</option>');
+               }
+             });
+     
+
+
+</script>
+ 
+ 
+ 
+<?php  
+ $message = '';  
+ $error = ''; 
+ 
+ $input = "SmackFactory";
+
+//  $encrypted = encryptIt( $input );
+//  $decrypted = decryptIt( $encrypted );
+ 
+//  echo $encrypted . '<br />' . $decrypted;
+ 
+//  function encryptIt( $q ) {
+//      $cryptKey  = 'qJB0rGtIn5UB1xG03efyCp';
+//      $qEncoded      = base64_encode( mcrypt_encrypt( MCRYPT_RIJNDAEL_256, md5( $cryptKey ), $q, MCRYPT_MODE_CBC, md5( md5( $cryptKey ) ) ) );
+//      return( $qEncoded );
+//  }
+ 
+//  function decryptIt( $q ) {
+//      $cryptKey  = 'qJB0rGtIn5UB1xG03efyCp';
+//      $qDecoded      = rtrim( mcrypt_decrypt( MCRYPT_RIJNDAEL_256, md5( $cryptKey ), base64_decode( $q ), MCRYPT_MODE_CBC, md5( md5( $cryptKey ) ) ), "\0");
+//      return( $qDecoded );}
+//  if(isset($_POST["submit"]))  
+//  {  
+//       if(empty($_POST["name"]))  
+//       {  
+//            $error = "<label class='text-danger'>Enter Name</label>";  
+//       }  
+//       else if(empty($_POST["gender"]))  
+//       {  
+//            $error = "<label class='text-danger'>Enter Gender</label>";  
+//       }  
+//       else if(empty($_POST["comments"]))  
+//       {  
+//            $error = "<label class='text-danger'>Enter Comments</label>";  
+//       }  
+//       else  
+//       {  
+           if(file_exists('./formData/employee_data.json'))  
+           {  
+                $current_data = file_get_contents('./formData/employee_data.json');  
+                $array_data = json_decode($current_data, true);
+                $Date=date('Y-m-d H:i:s');  
+                $extra = array(  
+                     'name'               =>     md5($_POST['name']),  
+                     'gender'          =>     $_POST["gender"],  
+                     'comments'     =>     $_POST["comments"], 
+                     'Type' =>     $_POST["radio"],
+                     'People' =>     $_POST["person"],
+                     'createdTime'     =>     $Date 
+                );  
+                $array_data[] = $extra;  
+                $final_data = json_encode($array_data);  
+                if(file_put_contents('./formData/employee_data.json', $final_data))  
+                {  
+                     $message = "<label class='text-success'>File Appended Success fully</p>";  
+                }  
+           }  
+           else  
+           {  
+                $error = 'JSON File not exits';  
+           }  
+//       }  
+     
+//  }  
+
+
+ ?>  
