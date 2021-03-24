@@ -1,0 +1,137 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
+using System;
+using System.Linq;
+
+namespace ConsoleApp4
+{
+    class Program
+    {
+        public static OrgatexIntegContext _appDbContext { get; private set; }
+
+        //    private static ApplicationDbContext _appDbContext;
+        private readonly IConfiguration Configuration;
+
+        public Program(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+       static void Main(string[] args)
+        {
+            IConfiguration Configuration = new ConfigurationBuilder()
+   .AddJsonFile("appsettings.json", true, true)
+   .AddEnvironmentVariables()
+   .AddCommandLine(args)
+   .Build();
+            var conn = Configuration["ConnectionString"];
+          
+            Console.WriteLine("Hello World!");
+          
+            var serviceProvider = new ServiceCollection()
+            .AddDbContext<OrgatexIntegContext>(options => options.UseSqlServer(conn))
+            .AddLogging(builder =>
+            {
+                builder.SetMinimumLevel(LogLevel.Trace);
+                builder.AddNLog(new NLogProviderOptions
+                {
+                    CaptureMessageTemplates = true,
+                    CaptureMessageProperties = true
+                });
+            }).BuildServiceProvider();
+
+
+            ILogger<Program> logger = serviceProvider.GetService<ILoggerFactory>()
+                                        .CreateLogger<Program>();
+            logger.LogInformation("Starting application...");
+
+            //  var serviceProvider = services.BuildServiceProvider();
+            _appDbContext = serviceProvider.GetService<OrgatexIntegContext>();
+            var query = from p in _appDbContext.Articles
+                        select p;
+
+            logger.LogInformation("Ending application...");
+
+
+        }
+        private static T InitOptions<T>()
+    where T : new()
+        {
+            var config = InitConfig();
+            return config.Get<T>();
+        }
+        private static IConfigurationRoot InitConfig()
+        {
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            var builder = new ConfigurationBuilder()
+                .AddJsonFile($"appsettings.json", true, true)
+                .AddJsonFile($"appsettings.{env}.json", true, true)
+                .AddEnvironmentVariables();
+
+            return builder.Build();
+        }
+        public  class AppConfig
+        {
+
+            public SmtpOptions Smtp { get; set; }
+            public MassTransitOptions MassTransit { get; set; }
+            public string ConnectionString { get; set; }
+        }
+
+        public class SmtpOptions
+        {
+            public string Host { get; set; }
+            public int Port { get; set; }
+            public string Username { get; set; }
+            public string Password { get; set; }
+        }
+        public class MassTransitOptions
+        {
+            public string Host { get; set; }
+            public string Queue { get; set; }
+        }
+    }
+}
+
+{
+  "MassTransit": {
+    "Host": "rabbitmq://localhost",
+    "Queue": "hildenco"
+  },
+  "ConnectionString": "Server=.;Database=xxxx;Trusted_Connection=True;MultipleActiveResultSets=true;",
+  "Smtp": {
+    "Host": "<smtp-server>",
+    "Port": "<smtp-port>",
+    "Username": "<username>",
+    "Password": "<password>",
+    "From": "HildenCo Notification Service"
+  }
+}
+
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- XSD manual extracted from package NLog.Schema: https://www.nuget.org/packages/NLog.Schema-->
+<nlog xmlns="http://www.nlog-project.org/schemas/NLog.xsd" xsi:schemaLocation="NLog NLog.xsd"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      autoReload="true" >
+
+
+  <!-- the targets to write to -->
+  <targets>
+    <!-- write logs to file -->
+    <target xsi:type="File" name="target1" fileName="${basedir}/log/${shortdate}.log"
+            layout="${date}|${level:uppercase=true}|${message} ${exception}|${logger}|${all-event-properties}" />
+    <target xsi:type="Console" name="target2"
+            layout="${date}|${level:uppercase=true}|${message} ${exception}|${logger}|${all-event-properties}" />
+  </targets>
+
+  <!-- rules to map from logger name to target -->
+  <rules>
+    <logger name="*" minlevel="Trace" writeTo="target1,target2" />
+  </rules>
+</nlog>
+
+
+
