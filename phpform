@@ -294,3 +294,41 @@ $.ajax({
 
 
  ?>  
+ 
+ https://garywoodfine.com/configuration-api-net-core-console-application/
+ 
+     <None Update="appsettings.json">
+         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      
+ class Program
+    {
+        public static OrgatexIntegContext _appDbContext { get; private set; }
+
+        //    private static ApplicationDbContext _appDbContext;
+        private readonly IConfiguration Configuration;
+
+        public Program(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+       static void Main(string[] args)
+        {
+            IConfiguration Configuration = new ConfigurationBuilder()
+   .AddJsonFile("appsettings.json", true, true)
+  // .AddEnvironmentVariables()
+  // .AddCommandLine(args)
+   .Build();
+            var section = Configuration["ConnectionString"];
+          
+            Console.WriteLine("Hello World!");
+          
+            var services = new ServiceCollection();
+            services.AddDbContext<OrgatexIntegContext>(options => options.UseSqlServer("blah-blah"));
+            var serviceProvider = services.BuildServiceProvider();
+            _appDbContext = serviceProvider.GetService<OrgatexIntegContext>();
+
+
+        }     
+      
