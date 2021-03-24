@@ -331,4 +331,8 @@ $.ajax({
 
 
         }     
-      
+      Microsoft.Extensions.Configuration
+Microsoft.Extensions.Configuration.Binder
+Microsoft.Extensions.Configuration.EnvironmentVariables
+Microsoft.Extensions.Configuration.FileExtensions
+Microsoft.Extensions.Configuration.Json
